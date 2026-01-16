@@ -9,7 +9,7 @@ from datetime import datetime
 import os, re
 
 EXCEL_FILE = "地域貢献_統合.xlsx"
-HTML_FILE = "地域貢献_年度診療科検索_app.html"
+HTML_FILE = "index.html"
 
 # --- Excel読込（先頭シート） ---
 xl = pd.ExcelFile(EXCEL_FILE, engine="openpyxl")
@@ -34,7 +34,6 @@ if "日付" in df.columns:
 # --- 選択肢生成（独立：年度／診療科） ---
 if ("年度" not in df.columns) or ("診療科" not in df.columns):
     raise ValueError("Excelに『年度』『診療科』列が必要です。")
-
 years = sorted(list({y for y in df["年度"].tolist() if y}))
 depts = sorted(list({d for d in df["診療科"].tolist() if d}))
 choices = {"年度": years, "診療科": depts}
@@ -67,93 +66,37 @@ button:hover { background: #f4f5f7; }
 .note { color: #777; font-size: .85rem; }
 .badge { display:inline-block; padding: 2px 8px; background: #eef2ff; border:1px solid #c7d2fe; border-radius: 999px; font-size: .8rem; color:#1e40af; }
 
-/* チェックボックス群 */
-.chkgroup { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 12px; align-items: start; }
-.chkgroup .chk { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px; border: 1px solid #eee; border-radius: 6px; background: #fafbff; }
-.chkgroup input[type="checkbox"] { transform: scale(1.1); }
-
-/* プルダウン（<details>）の見た目 */
-details.dropdown { border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; background: #fff; min-width: 280px; }
-details.dropdown summary { cursor: pointer; list-style: none; font-weight: 600; font-size: .95rem; color: #374151; display: flex; align-items: center; gap: 8px; }
-details.dropdown summary::-webkit-details-marker { display: none; }
-details.dropdown summary::after { content: "▾"; color: #6b7280; margin-left: auto; }
-details.dropdown[open] summary::after { content: "▴"; }
-details.dropdown .panel { margin-top: 8px; border-top: 1px dashed #e5e7eb; padding-top: 8px; }
-.details-actions { display: flex; gap: 8px; margin-top: 8px; }
-.details-actions button { padding: 6px 10px; font-size: .85rem; }
-
-
-/* 既存 …（略） */
-
-/* プルダウン（<details>）の見た目をオーバーレイ化 */
-details.dropdown {
-  position: relative;                /* 絶対配置の基準にする */
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 6px 10px;
-  background: #fff;
-  min-width: 280px;
+/* ▼ ここから dropdown（button+panel）＆縦並びチェックボックスに変更 */
+.dropdown { position: relative; display: inline-block; }
+.dropdown-toggle {
+  padding: 8px 12px; font-size: .95rem; border: 1px solid #ccc;
+  border-radius: 6px; background: #fff; cursor: pointer;
 }
-
-details.dropdown summary {
-  cursor: pointer;
-  list-style: none;
-  font-weight: 600;
-  font-size: .95rem;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-details.dropdown summary::-webkit-details-marker { display: none; }
-details.dropdown summary::after { content: "▾"; color: #6b7280; margin-left: auto; }
-details.dropdown[open] summary::after { content: "▴"; }
-
-/* ここがレイアウト非干渉のキモ：パネルを絶対配置にして重ねる */
-details.dropdown .panel {
-  position: absolute;
-  top: calc(100% + 6px);             /* サマリーの下に重ねる */
-  left: 0;
-  width: 360px;                      /* 必要に応じて調整可 */
-  max-height: 320px;                 /* 候補が多い時のスクロール */
-  overflow: auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+.dropdown-toggle[aria-expanded="true"] { background: #f4f5f7; }
+.dropdown-panel {
+  position: absolute; z-index: 1000; min-width: 300px; margin-top: 6px;
+  background: #fff; border: 1px solid #ddd; border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0,0,0,.12);
-  padding: 10px 12px;
-  z-index: 1000;                     /* テーブルより前面に */
+  padding: 10px; display: none;
 }
+.dropdown-panel.open { display: block; }
 
-/* パネル内の補助ボタン行 */
-.details-actions { 
-  display: flex; 
-  gap: 8px; 
-  margin-top: 8px; 
+.dropdown-actions {
+  display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 8px;
 }
-.details-actions button { 
-  padding: 6px 10px; 
-  font-size: .85rem; 
+.dropdown-actions button {
+  padding: 6px 10px; font-size: .85rem; border: 1px solid #ccc;
+  border-radius: 6px; background: #fff; cursor: pointer;
 }
+.dropdown-actions button:hover { background: #f4f5f7; }
 
-/* チェックボックス群（既存のままでOK。幅を広げたので少し余裕を持たせる） */
-.chkgroup { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
-  gap: 6px 12px; 
-  align-items: start; 
+.checkbox-list {
+  display: grid; grid-template-columns: 1fr; gap: 6px;
+  max-height: 280px; overflow-y: auto; border: 1px solid #eee;
+  padding: 8px; border-radius: 6px; background: #fff;
 }
-.chkgroup .chk { 
-  display: inline-flex; 
-  align-items: center; 
-  gap: 6px; 
-  padding: 4px 6px; 
-  border: 1px solid #eee; 
-  border-radius: 6px; 
-  background: #fafbff; 
-}
-.chkgroup input[type="checkbox"] { transform: scale(1.1); }
-
+.chk { display: flex; align-items: center; gap: 8px; font-size: .95rem; }
+/* ▲ ここまで変更（縦並び＆上部アクション） */
 """
 
 # --- 動作（JavaScript） ---
@@ -162,32 +105,47 @@ const DATA = __DATA__;
 const CHOICES = __CHOICES__;
 const COLS = __COLS__;
 
-// チェックボックスコンテナ（プルダウン内）
-const yearGroup = document.getElementById('year_group');
-const deptGroup = document.getElementById('dept_group');
 const exportBtn = document.getElementById('export');
 
-// 候補描画
+// 年度
+const ddYearBtn   = document.getElementById('dd-year-btn');
+const ddYearPanel = document.getElementById('dd-year-panel');
+const yearList    = document.getElementById('year_list');
+const yearSelectAllBtn = document.getElementById('year_select_all');
+const yearClearAllBtn  = document.getElementById('year_clear_all');
+
+// 診療科
+const ddDeptBtn   = document.getElementById('dd-dept-btn');
+const ddDeptPanel = document.getElementById('dd-dept-panel');
+const deptList    = document.getElementById('dept_list');
+const deptSelectAllBtn = document.getElementById('dept_select_all');
+const deptClearAllBtn  = document.getElementById('dept_clear_all');
+
+// 候補描画（縦並び）
 function renderYearChoices() {
-  yearGroup.innerHTML =
-    CHOICES['年度'].map(y => `<label class="chk"><input type="checkbox" value="${y}"> ${y}</label>`).join('');
+  yearList.innerHTML = CHOICES['年度']
+    .map(y => `<label class="chk"><input type="checkbox" name="year" value="${y}">${y}</label>`)
+    .join('');
 }
 function renderDeptChoices() {
-  deptGroup.innerHTML =
-    CHOICES['診療科'].map(d => `<label class="chk"><input type="checkbox" value="${d}"> ${d}</label>`).join('');
+  deptList.innerHTML = CHOICES['診療科']
+    .map(d => `<label class="chk"><input type="checkbox" name="dept" value="${d}">${d}</label>`)
+    .join('');
 }
 
-// 選択値取得
-function getCheckedValues(groupEl) {
-  return Array.from(groupEl.querySelectorAll('input[type="checkbox"]:checked')).map(el => el.value);
+// 選択値取得（name基準）
+function getChecked(name) {
+  return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(el => el.value);
 }
 
 // フィルタ
 function getFiltered() {
-  const ys = getCheckedValues(yearGroup);
-  const ds = getCheckedValues(deptGroup);
-  return DATA.filter(r => (ys.length === 0 || ys.includes(r['年度'])) &&
-                          (ds.length === 0 || ds.includes(r['診療科'])));
+  const years = getChecked('year');
+  const depts = getChecked('dept');
+  return DATA.filter(r =>
+    (years.length === 0 || years.includes(r['年度'])) &&
+    (depts.length === 0 || depts.includes(r['診療科']))
+  );
 }
 
 // テーブル生成
@@ -206,10 +164,10 @@ function makeTable(containerId, rows) {
 
 // バッジ更新
 function renderBadges() {
-  const ys = getCheckedValues(yearGroup);
-  const ds = getCheckedValues(deptGroup);
-  document.getElementById('badge_year').textContent = ys.length ? ys.join('、') : '未選択';
-  document.getElementById('badge_dept').textContent = ds.length ? ds.join('、') : '未選択';
+  const years = getChecked('year');
+  const depts = getChecked('dept');
+  document.getElementById('badge_year').textContent = years.length ? years.join(', ') : '未選択';
+  document.getElementById('badge_dept').textContent = depts.length ? depts.join(', ') : '未選択';
 }
 
 // 再描画フロー
@@ -238,29 +196,53 @@ function exportCSV() {
   document.body.removeChild(a); URL.revokeObjectURL(url);
 }
 
-// すべて選択／解除（任意）
-function selectAll(groupEl) {
-  groupEl.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = true; });
+// ドロップダウン開閉
+function toggleDropdown(btn, panel, open) {
+  const isOpen = (open != null) ? open : !(panel.classList.contains('open'));
+  panel.classList.toggle('open', isOpen);
+  btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
 }
-function clearAll(groupEl) {
-  groupEl.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; });
-}
+ddYearBtn.addEventListener('click', () => toggleDropdown(ddYearBtn, ddYearPanel));
+ddDeptBtn.addEventListener('click', () => toggleDropdown(ddDeptBtn, ddDeptPanel));
+document.addEventListener('click', (e) => {
+  if (!ddYearBtn.contains(e.target) && !ddYearPanel.contains(e.target)) toggleDropdown(ddYearBtn, ddYearPanel, false);
+  if (!ddDeptBtn.contains(e.target) && !ddDeptPanel.contains(e.target)) toggleDropdown(ddDeptBtn, ddDeptPanel, false);
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    toggleDropdown(ddYearBtn, ddYearPanel, false);
+    toggleDropdown(ddDeptBtn, ddDeptPanel, false);
+  }
+});
 
-// デリゲーションで変更イベント監視
-yearGroup.addEventListener('change', () => { renderCards(); });
-deptGroup.addEventListener('change', () => { renderCards(); });
-exportBtn.addEventListener('click', exportCSV);
+// 一括選択/解除（上部）
+yearSelectAllBtn.addEventListener('click', () => {
+  document.querySelectorAll('input[name="year"]').forEach(el => el.checked = true);
+  renderCards();
+});
+yearClearAllBtn.addEventListener('click', () => {
+  document.querySelectorAll('input[name="year"]').forEach(el => el.checked = false);
+  renderCards();
+});
+deptSelectAllBtn.addEventListener('click', () => {
+  document.querySelectorAll('input[name="dept"]').forEach(el => el.checked = true);
+  renderCards();
+});
+deptClearAllBtn.addEventListener('click', () => {
+  document.querySelectorAll('input[name="dept"]').forEach(el => el.checked = false);
+  renderCards();
+});
+
+// 変更即時反映
+document.addEventListener('change', (e) => {
+  if (e.target && (e.target.name === 'year' || e.target.name === 'dept')) renderCards();
+});
 
 // 初期描画
 renderYearChoices();
 renderDeptChoices();
 renderCards();
-
-// 「すべて選択／解除」ボタンにイベント付与
-document.getElementById('year_select_all').addEventListener('click', () => { selectAll(yearGroup); renderCards(); });
-document.getElementById('year_clear_all').addEventListener('click', () => { clearAll(yearGroup); renderCards(); });
-document.getElementById('dept_select_all').addEventListener('click', () => { selectAll(deptGroup); renderCards(); });
-document.getElementById('dept_clear_all').addEventListener('click', () => { clearAll(deptGroup); renderCards(); });
+exportBtn.addEventListener('click', exportCSV);
 """
 
 # --- HTMLテンプレート ---
@@ -275,34 +257,38 @@ html_tpl = """<!doctype html>
 <body>
   <header>
     <h1>地域貢献</h1>
-    
-
     <div class="controls" role="region" aria-label="検索条件">
-      <details class="dropdown" id="year_dd">
-        <summary>年度（複数選択可）</summary>
-        <div class="panel">
-          <div id="year_group" class="chkgroup" aria-label="年度選択"></div>
-          <div class="details-actions">
+      <!-- 年度（dropdown＋縦並びチェック） -->
+      <div class="dropdown">
+        <button class="dropdown-toggle" id="dd-year-btn" aria-expanded="false" aria-controls="dd-year-panel">
+          年度を選択（複数可）
+        </button>
+        <div class="dropdown-panel" id="dd-year-panel" role="listbox" aria-labelledby="dd-year-btn">
+          <div class="dropdown-actions">
             <button id="year_select_all" type="button">すべて選択</button>
             <button id="year_clear_all" type="button">すべて解除</button>
           </div>
+          <div id="year_list" class="checkbox-list" aria-label="年度選択"></div>
         </div>
-      </details>
+      </div>
 
-      <details class="dropdown" id="dept_dd">
-        <summary>診療科（複数選択可）</summary>
-        <div class="panel">
-          <div id="dept_group" class="chkgroup" aria-label="診療科選択"></div>
-          <div class="details-actions">
+      <!-- 診療科（dropdown＋縦並びチェック） -->
+      <div class="dropdown">
+        <button class="dropdown-toggle" id="dd-dept-btn" aria-expanded="false" aria-controls="dd-dept-panel">
+          診療科を選択（複数可）
+        </button>
+        <div class="dropdown-panel" id="dd-dept-panel" role="listbox" aria-labelledby="dd-dept-btn">
+          <div class="dropdown-actions">
             <button id="dept_select_all" type="button">すべて選択</button>
             <button id="dept_clear_all" type="button">すべて解除</button>
           </div>
+          <div id="dept_list" class="checkbox-list" aria-label="診療科選択"></div>
         </div>
-      </details>
+      </div>
 
       <div style="align-self: end;">
         <button id="export" title="現在の抽出結果をCSVで保存">CSVダウンロード</button>
-        <div class="note">※未選択の場合は全件対象になります。</div>
+        <div class="note">※年度・診療科は複数選択できます（未選択の場合は全件）</div>
       </div>
     </div>
 
@@ -310,32 +296,29 @@ html_tpl = """<!doctype html>
   </header>
 
   <section class="card">
-    <h2>地域貢献</h2>
+    <h2>地域貢献－検索結果</h2>
     <div class="count" id="count"></div>
     <div id="tbl_main"></div>
   </section>
 
-  
   <script>[[JS]]</script>
 </body>
 </html>"""
 
+# --- HTML生成 ---
 html = (
     html_tpl.replace("[[CSS]]", css)
-    .replace("[[SRC]]", os.path.basename(EXCEL_FILE))
-    .replace("[[TS]]", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    .replace("[[SHEET]]", str(sheet_name))
+            .replace("[[SRC]]", os.path.basename(EXCEL_FILE))
+            .replace("[[TS]]", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            .replace("[[SHEET]]", str(sheet_name))
 )
-
 js_filled = (
     js.replace("__DATA__", json.dumps(records, ensure_ascii=False))
       .replace("__CHOICES__", json.dumps(choices, ensure_ascii=False))
       .replace("__COLS__", json.dumps(cols, ensure_ascii=False))
 )
-
 html = html.replace("[[JS]]", js_filled)
 
 with open(HTML_FILE, "w", encoding="utf-8") as f:
     f.write(html)
-
 print("✓ 生成完了:", HTML_FILE)
