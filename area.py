@@ -20,21 +20,12 @@ for col in df.columns:
     df[col] = df[col].apply(lambda x: "" if pd.isna(x) else str(x))
 
 # 任意：日付で昇順ソート（日付列があれば）
-if "日付" in df.columns:
-    def to_date(s: str):
-        try:
-            s2 = re.sub(r"[.年]", "/", s).replace("月", "/").replace("日", "")
-            return pd.to_datetime(s2, errors="coerce")
-        except Exception:
-            return pd.NaT
-    tmp_date = df["日付"].apply(to_date)
-    df = df.assign(__sort_date=tmp_date).sort_values(by=["__sort_date", "日付"])
-    df = df.drop(columns=["__sort_date"])
+
 
 # --- 選択肢生成（独立：年度／診療科） ---
 if ("年度" not in df.columns) or ("診療科" not in df.columns):
     raise ValueError("Excelに『年度』『診療科』列が必要です。")
-years = sorted(list({y for y in df["年度"].tolist() if y}))
+years = sorted(list({y for y in df["年度"].tolist() if y}), reverse=True)
 depts = sorted(list({d for d in df["診療科"].tolist() if d}))
 choices = {"年度": years, "診療科": depts}
 
