@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 import os, re
 
-EXCEL_FILE = "地域貢献_統合.xlsx"
+EXCEL_FILE = "地域貢献.xlsx"
 HTML_FILE = "index.html"
 
 # --- Excel読込（先頭シート） ---
@@ -30,7 +30,7 @@ depts = sorted(list({d for d in df["診療科"].tolist() if d}))
 choices = {"年度": years, "診療科": depts}
 
 # --- 表示列の並び（主要項目を前に） ---
-preferred = ["年度","事業所","診療科","発表者","日付","タイトル","主催/共催","形態","特記事項（年代、エリア限定等）"]
+preferred = ["年度","日付","事業所","診療科","発表者","タイトル","主催 / 共催","形態","特記事項（年代、エリア限定など）"]
 cols = [c for c in preferred if c in df.columns] + [c for c in df.columns if c not in preferred]
 records = df[cols].to_dict(orient="records")
 
